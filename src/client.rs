@@ -4,7 +4,6 @@ use crate::{
     utils::{calculate_sha1, encode_file_name, generate_file_name},
 };
 use reqwest::{header, Client};
-use std::{fs::File, io::Read, path::Path};
 
 pub struct B2Uploader {
     key_id: String,
@@ -56,15 +55,12 @@ impl B2Uploader {
             .await?)
     }
 
-    pub async fn upload_file<P: AsRef<Path>>(
+    pub async fn upload_file(
         &self,
-        file_path: P,
+        file_content: Vec<u8>,
         upload_url_response: &UploadUrlResponse,
     ) -> Result<serde_json::Value, B2Error> {
         let cloud_name = generate_file_name();
-        let mut file = File::open(file_path)?;
-        let mut file_content = Vec::new();
-        file.read_to_end(&mut file_content)?;
 
         let sha1_hash = calculate_sha1(&file_content);
         let encoded_file_name = encode_file_name(&cloud_name);
