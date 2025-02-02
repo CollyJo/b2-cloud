@@ -1,5 +1,5 @@
 [package]
-name = "b2_uploader"
+name = "b2_cloud"
 version = "0.1.0"
 edition = "2021"
 description = "A library for uploading files to Backblaze B2"
