@@ -1,0 +1,23 @@
+[package]
+name = "b2_uploader"
+version = "0.1.0"
+edition = "2021"
+description = "A library for uploading files to Backblaze B2"
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1.0", features = ["full"] }
+sha1 = "0.10"
+percent-encoding = "2.3"
+serde_json = "1.0.138"
+serde = { version = "1.0", features = ["derive"] }
+hex = "0.4"
+reqwest = { version = "0.12.12", default-features = false }
+dotenv = "0.15"
+chrono = "0.4"
+thiserror = "2.0.11"
+
+[features]
+default = ["native-tls"]
+native-tls = ["reqwest/native-tls-vendored"]
+rustls = ["reqwest/rustls-tls"]
