@@ -1,10 +1,19 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthResponse {
     pub api_info: ApiInfo,
     pub authorization_token: String,
+}
+
+impl Default for AuthResponse {
+    fn default() -> Self {
+        Self {
+            api_info: ApiInfo::default(),
+            authorization_token: String::new(),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]

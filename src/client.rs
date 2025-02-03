@@ -6,24 +6,48 @@ use crate::{
 use reqwest::{header, Client};
 
 pub struct B2Uploader {
-    key_id: String,
-    key_name: String,
-    bucket_id: String,
     client: Client,
+    auth_response: AuthResponse,
+    upload_url_response: UploadUrlResponse,
 }
 
 impl B2Uploader {
-    pub fn new(key_id: String, key_name: String, bucket_id: String) -> Self {
+    pub async fn new() -> Result<Self, B2Error> {
+        let key_id = std::env::var("B2_KEY_ID")
+            .map_err(|_| B2Error::ConfigError("B2_KEY_ID not set".into()))?;
+        let key_name = std::env::var("B2_KEY_NAME")
+            .map_err(|_| B2Error::ConfigError("B2_KEY_NAME not set".into()))?;
+        let bucket_id = std::env::var("B2_BUCKET_ID")
+            .map_err(|_| B2Error::ConfigError("B2_BUCKET_ID not set".into()))?;
+
         let client = Client::new();
-        Self {
-            key_id,
-            key_name,
-            bucket_id,
+        let temp_uploader = Self {
+            client: client.clone(),
+            auth_response: AuthResponse {
+                api_info: ApiInfo {
+                    storage_api: StorageApi {
+                        api_url: String::new(),
+                    },
+                },
+                authorization_token: String::new(),
+            },
+            upload_url_response: UploadUrlResponse {
+                upload_url: String::new(),
+                authorization_token: String::new(),
+            },
+        };
+
+        let auth_response = temp_uploader.authenticate().await?;
+        let upload_url_response = temp_uploader.get_upload_url(&auth_response).await?;
+
+        Ok(Self {
             client,
-        }
+            auth_response,
+            upload_url_response,
+        })
     }
 
-    pub async fn authenticate(&self) -> Result<AuthResponse, B2Error> {
+    async fn authenticate(&self) -> Result<AuthResponse, B2Error> {
         Ok(self
             .client
             .get("https://api.backblazeb2.com/b2api/v3/b2_authorize_account")
@@ -34,7 +58,7 @@ impl B2Uploader {
             .await?)
     }
 
-    pub async fn get_upload_url(
+    async fn get_upload_url(
         &self,
         auth_response: &AuthResponse,
     ) -> Result<UploadUrlResponse, B2Error> {

@@ -11,6 +11,9 @@ pub enum B2Error {
     #[error("Authentication failed: {0}")]
     AuthError(String),
 
+    #[error("Configuration error: {0}")]
+    ConfigError(String),
+
     #[error("Upload failed: {status_code} - {message}")]
     UploadError { status_code: u16, message: String },
 
