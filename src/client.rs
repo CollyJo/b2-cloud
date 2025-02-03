@@ -1,6 +1,6 @@
 use crate::{
     error::B2Error,
-    models::{AuthResponse, BucketRequest, UploadUrlResponse},
+    models::{ApiInfo, AuthResponse, BucketRequest, StorageApi, UploadUrlResponse},
     utils::{calculate_sha1, encode_file_name, generate_file_name},
 };
 use reqwest::{header, Client};
@@ -9,10 +9,15 @@ pub struct B2Uploader {
     client: Client,
     auth_response: AuthResponse,
     upload_url_response: UploadUrlResponse,
+    key_id: String,
+    key_name: String,
+    bucket_id: String,
 }
 
 impl B2Uploader {
     pub async fn new() -> Result<Self, B2Error> {
+        dotenv::dotenv().ok();
+
         let key_id = std::env::var("B2_KEY_ID")
             .map_err(|_| B2Error::ConfigError("B2_KEY_ID not set".into()))?;
         let key_name = std::env::var("B2_KEY_NAME")
@@ -23,18 +28,14 @@ impl B2Uploader {
         let client = Client::new();
         let temp_uploader = Self {
             client: client.clone(),
-            auth_response: AuthResponse {
-                api_info: ApiInfo {
-                    storage_api: StorageApi {
-                        api_url: String::new(),
-                    },
-                },
-                authorization_token: String::new(),
-            },
+            auth_response: AuthResponse::default(),
             upload_url_response: UploadUrlResponse {
                 upload_url: String::new(),
                 authorization_token: String::new(),
             },
+            key_id: key_id.clone(),
+            key_name: key_name.clone(),
+            bucket_id: bucket_id.clone(),
         };
 
         let auth_response = temp_uploader.authenticate().await?;
@@ -44,6 +45,9 @@ impl B2Uploader {
             client,
             auth_response,
             upload_url_response,
+            key_id,
+            key_name,
+            bucket_id,
         })
     }
 
@@ -79,11 +83,7 @@ impl B2Uploader {
             .await?)
     }
 
-    pub async fn upload_file(
-        &self,
-        file_content: Vec<u8>,
-        upload_url_response: &UploadUrlResponse,
-    ) -> Result<serde_json::Value, B2Error> {
+    pub async fn upload_file(&self, file_content: Vec<u8>) -> Result<serde_json::Value, B2Error> {
         let cloud_name = generate_file_name();
 
         let sha1_hash = calculate_sha1(&file_content);
@@ -91,10 +91,10 @@ impl B2Uploader {
 
         let response = self
             .client
-            .post(&upload_url_response.upload_url)
+            .post(&self.upload_url_response.upload_url)
             .header(
                 header::AUTHORIZATION,
-                &upload_url_response.authorization_token,
+                &self.upload_url_response.authorization_token,
             )
             .header("X-Bz-File-Name", encoded_file_name)
             .header(header::CONTENT_TYPE, "text/plain")

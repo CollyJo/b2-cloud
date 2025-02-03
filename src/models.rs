@@ -1,28 +1,19 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Default)]
+#[derive(Serialize, Deserialize, Debug, Default)] // Убрали ручную реализацию Default
 #[serde(rename_all = "camelCase")]
 pub struct AuthResponse {
     pub api_info: ApiInfo,
     pub authorization_token: String,
 }
 
-impl Default for AuthResponse {
-    fn default() -> Self {
-        Self {
-            api_info: ApiInfo::default(),
-            authorization_token: String::new(),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)] // Добавили Default
 #[serde(rename_all = "camelCase")]
 pub struct ApiInfo {
     pub storage_api: StorageApi,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)] // Добавили Default
 #[serde(rename_all = "camelCase")]
 pub struct StorageApi {
     pub api_url: String,
